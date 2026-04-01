@@ -1,0 +1,15 @@
+from rest_framework.permissions import BasePermission
+
+class IsAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.role == 'admin'
+
+
+class IsAnalystOrAdmin(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.role in ['analyst', 'admin']
+
+
+class IsViewer(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.role == 'viewer'

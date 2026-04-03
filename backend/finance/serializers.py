@@ -5,3 +5,4 @@ class FinancialRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = FinancialRecord
         fields = '__all__'
+        read_only_fields = ['user']

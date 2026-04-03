@@ -110,3 +110,13 @@ def confirm_password_reset(request):
         return Response({"message": "Password has been reset successfully."})
     else:
         return Response({"error": "Invalid or expired reset link"}, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def me(request):
+    """
+    Securely returns the current user's profile information.
+    This is an IDOR-safe way for users to access their own data.
+    """
+    serializer = UserSerializer(request.user)
+    return Response(serializer.data)

@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     register, verify_email, request_password_reset, confirm_password_reset,
-    UserViewSet
+    UserViewSet, me
 )
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
@@ -17,4 +17,5 @@ urlpatterns = [
     path('verify-email/', verify_email, name='verify_email'),
     path('request-password-reset/', request_password_reset, name='request_password_reset'),
     path('confirm-password-reset/', confirm_password_reset, name='confirm_password_reset'),
+    path('me/', me, name='me'),
 ]

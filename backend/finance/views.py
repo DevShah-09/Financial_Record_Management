@@ -7,31 +7,47 @@ from django.db.models.functions import TruncMonth
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import FinancialRecord
 from .serializers import FinancialRecordSerializer
-from users.permissions import IsAdmin, IsAnalystOrAdmin
+from users.permissions import IsAdmin, IsAnalystOrAdmin, IsOwner
 from .services import trigger_ai_insight
 
 class FinancialRecordViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for financial records. 
+    Strictly scopes data access to the owner, unless the requester is an Admin.
+    """
     queryset = FinancialRecord.objects.all()
     serializer_class = FinancialRecordSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, IsOwner]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['type', 'category', 'date']
     search_fields = ['category', 'notes']
 
     def get_queryset(self):
+        """
+        Force object-level isolation at the query level.
+        """
         user = self.request.user
         if user.role == 'admin':
             return FinancialRecord.objects.all()
         return FinancialRecord.objects.filter(user=user)
 
     def get_permissions(self):
+        """
+        Apply role-based and ownership-based permissions.
+        """
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            return [IsAdmin()]
-        return [IsAnalystOrAdmin()]
+            # Create/Modify requires Admin OR Owner (IsOwner handles object-level)
+            # In simple setup, only Admins are currently allowed to modify
+            return [IsAuthenticated(), IsAdmin()]
+        
+        # Others (List/Retrieve) require at least Analyst role
+        return [IsAuthenticated(), IsAnalystOrAdmin(), IsOwner()]
 
     def perform_create(self, serializer):
+        """
+        Ensure the record is always created for the logged-in user.
+        """
         record = serializer.save(user=self.request.user)
-        # Attempt AI trigger safely
         try:
             trigger_ai_insight({
                 "amount": float(record.amount),
@@ -39,7 +55,6 @@ class FinancialRecordViewSet(viewsets.ModelViewSet):
                 "category": record.category
             })
         except Exception as e:
-            # For now, just logging; in production, use a proper error tracking system
             import logging
             logging.getLogger(__name__).error(f"AI insight trigger failed: {e}")
 
@@ -47,8 +62,7 @@ class FinancialRecordViewSet(viewsets.ModelViewSet):
 @permission_classes([IsAuthenticated])
 def dashboard_summary(request):
     """
-    Returns a unified summary of income, expense, and net balance for the user.
-    Optimized for performance with a single conditional aggregation query.
+    Returns a unified summary for the logged-in user only.
     """
     summary = FinancialRecord.objects.filter(user=request.user).aggregate(
         total_income=Sum(
@@ -72,7 +86,7 @@ def dashboard_summary(request):
 @permission_classes([IsAuthenticated])
 def category_summary(request):
     """
-    Returns category-wise totals for the logged-in user.
+    Returns category-wise totals for the logged-in user only.
     """
     data = (
         FinancialRecord.objects
@@ -87,7 +101,7 @@ def category_summary(request):
 @permission_classes([IsAuthenticated])
 def monthly_trends(request):
     """
-    Returns monthly income vs expense trends for the logged-in user.
+    Returns monthly trends for the logged-in user only.
     """
     data = (
         FinancialRecord.objects
@@ -106,7 +120,7 @@ def monthly_trends(request):
 @permission_classes([IsAuthenticated])
 def recent_activity(request):
     """
-    Returns the most recent 10 transactions for the dashboard.
+    Returns recent transactions for the logged-in user only.
     """
     records = (
         FinancialRecord.objects

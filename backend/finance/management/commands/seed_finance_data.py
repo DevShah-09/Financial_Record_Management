@@ -12,9 +12,9 @@ class Command(BaseCommand):
 
         # Create Users
         users_data = [
-            {'username': 'admin_user', 'email': 'admin@example.com', 'role': 'admin', 'password': 'Password123!', 'is_active': True},
-            {'username': 'analyst_user', 'email': 'analyst@example.com', 'role': 'analyst', 'password': 'Password123!', 'is_active': True},
-            {'username': 'viewer_user', 'email': 'viewer@example.com', 'role': 'viewer', 'password': 'Password123!', 'is_active': True},
+            {'username': 'admin_user', 'email': 'admin@example.com', 'role': 'admin', 'password': 'Password123!', 'is_staff': True, 'is_superuser': True},
+            {'username': 'analyst_user', 'email': 'analyst@example.com', 'role': 'analyst', 'password': 'Password123!', 'is_staff': True, 'is_superuser': False},
+            {'username': 'viewer_user', 'email': 'viewer@example.com', 'role': 'viewer', 'password': 'Password123!', 'is_staff': False, 'is_superuser': False},
         ]
 
         created_users = []
@@ -22,14 +22,23 @@ class Command(BaseCommand):
             user, created = User.objects.get_or_create(
                 username=u_data['username'],
                 email=u_data['email'],
-                defaults={'role': u_data['role'], 'is_active': u_data['is_active']}
+                defaults={
+                    'role': u_data['role'], 
+                    'is_active': True,
+                    'is_staff': u_data.get('is_staff', False),
+                    'is_superuser': u_data.get('is_superuser', False)
+                }
             )
-            if created:
-                user.set_password(u_data['password'])
-                user.save()
-                self.stdout.write(self.style.SUCCESS(f"User {user.username} created"))
-            else:
-                self.stdout.write(f"User {user.username} already exists")
+            
+            # Always update permissions and password to ensure they match seed data
+            user.role = u_data['role']
+            user.is_staff = u_data.get('is_staff', False)
+            user.is_superuser = u_data.get('is_superuser', False)
+            user.set_password(u_data['password'])
+            user.save()
+            
+            status = "created" if created else "updated"
+            self.stdout.write(self.style.SUCCESS(f"User {user.username} {status} (Role: {user.role}, Staff: {user.is_staff})"))
             created_users.append(user)
 
         # Create Financial Records

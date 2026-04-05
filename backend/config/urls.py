@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 def home(request):
-    return HttpResponse("<h1>Financial Record Management Backend is Working</h1><p>Visit <a href='/api/docs/'>/api/docs/</a> for the API or <a href='/admin/'>/admin/</a> for the admin panel.</p>")
+    return HttpResponse("<h1>Financial Record Management Backend is Working</h1><p>Visit <a href='/api/schema/swagger-ui/'>/api/schema/swagger-ui/</a> for the API or <a href='/admin/'>/admin/</a> for the admin panel.</p>")
 
 urlpatterns = [
     path('', home, name='home'),
@@ -14,6 +14,6 @@ urlpatterns = [
     
     # API Documentation
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    path('api/schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]

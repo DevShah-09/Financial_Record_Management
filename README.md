@@ -61,6 +61,7 @@ python manage.py run server
 ```
 
 ## 🔐 Credentials (Seed Data)
+The seed script generates demo users for testing purposes:
 - **Admin**: `admin_user` / `Password123!`
 - **Analyst**: `analyst_user` / `Password123!`
 - **Viewer**: `viewer_user` / `Password123!`

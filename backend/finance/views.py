@@ -7,8 +7,8 @@ from django.db.models.functions import TruncMonth
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import FinancialRecord
 from .serializers import FinancialRecordSerializer
+from rest_framework.pagination import PageNumberPagination
 from users.permissions import IsAdmin, IsAnalystOrAdmin, IsOwner, DenyAll
-from .services import trigger_ai_insight
 
 class FinancialRecordViewSet(viewsets.ModelViewSet):
     """
@@ -18,9 +18,12 @@ class FinancialRecordViewSet(viewsets.ModelViewSet):
     queryset = FinancialRecord.objects.all()
     serializer_class = FinancialRecordSerializer
     permission_classes = [IsAuthenticated, IsOwner]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    pagination_class = PageNumberPagination
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['type', 'category', 'date']
     search_fields = ['category', 'notes']
+    ordering_fields = ['date', 'amount', 'type', 'category', 'created_at']
+    ordering = ['-created_at']
 
     def get_queryset(self):
         """

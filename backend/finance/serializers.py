@@ -6,3 +6,8 @@ class FinancialRecordSerializer(serializers.ModelSerializer):
         model = FinancialRecord
         fields = '__all__'
         read_only_fields = ['user']
+
+    def validate_amount(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Amount must be a positive number.")
+        return value

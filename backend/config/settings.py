@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     # Third party apps
     'rest_framework',
     'django_filters',
+    'drf_spectacular',
     
     # Local apps
     'users',
@@ -72,7 +73,15 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '10/min',
         'user': '1000/day'
-    }
+    },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Financial Record Management API',
+    'DESCRIPTION': 'API for managing financial records with role-based access control.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
 
 SIMPLE_JWT = {

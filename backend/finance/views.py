@@ -7,7 +7,7 @@ from django.db.models.functions import TruncMonth
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import FinancialRecord
 from .serializers import FinancialRecordSerializer
-from users.permissions import IsAdmin, IsAnalystOrAdmin, IsOwner
+from users.permissions import IsAdmin, IsAnalystOrAdmin, IsOwner, DenyAll
 from .services import trigger_ai_insight
 
 class FinancialRecordViewSet(viewsets.ModelViewSet):
@@ -24,23 +24,33 @@ class FinancialRecordViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Force object-level isolation at the query level.
+        Admins and Analysts can see all data. 
+        Viewers and others only see their own (but Viewers are blocked from listing records entirely).
         """
         user = self.request.user
-        if user.role == 'admin':
+        if not user.is_authenticated:
+            return FinancialRecord.objects.none()
+        if user.role in ['admin', 'analyst']:
             return FinancialRecord.objects.all()
         return FinancialRecord.objects.filter(user=user)
 
     def get_permissions(self):
         """
         Apply role-based and ownership-based permissions.
+        - Create/Modify: Restricted to Admins.
+        - View (List/Retrieve): Restricted to Analyst, Admin, or Owner.
+        - Viewers: Cannot access this ViewSet (handled via role check).
         """
+        user = self.request.user
+        if not user.is_authenticated:
+            return [IsAuthenticated()]
+
+        if user.role == 'viewer':
+            return [DenyAll()]
+
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            # Create/Modify requires Admin OR Owner (IsOwner handles object-level)
-            # In simple setup, only Admins are currently allowed to modify
             return [IsAuthenticated(), IsAdmin()]
         
-        # Others (List/Retrieve) require at least Analyst role
         return [IsAuthenticated(), IsAnalystOrAdmin(), IsOwner()]
 
     def perform_create(self, serializer):
